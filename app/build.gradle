@@ -8,7 +8,9 @@ def getVersionCode = { ->
     try {
         def code = new ByteArrayOutputStream()
         exec {
-            commandLine 'git', 'rev-list', '--count', 'origin/main'
+            // count commits on the current branch (HEAD) so every commit bumps
+            // versionCode regardless of origin/main; also works in fresh clones
+            commandLine 'git', 'rev-list', '--count', 'HEAD'
             standardOutput = code
         }
         return Integer.parseInt(code.toString().trim())
