@@ -6,7 +6,7 @@
     <string name="no_torrent_activity_found">There is no application to open torrent links. Please, install TorrServe or any other App working with torrents.</string>
     <string name="no_youtube_activity_found">There is no application to open YouTube links. Please, install YouTube App.</string>
     <string name="no_launch_player">The selected player does not support playing this video</string>
-    <string name="invalid_url">Enter the correct website address, for example:\nhttp://lampa.mx</string>
+    <string name="invalid_url">Enter the correct website address, for example:\nhttps://lampa.gk.cloud-ip.cc</string>
     <string name="cancel">Cancel</string>
     <string name="save">Save</string>
     <string name="show_menu">Open menu</string>

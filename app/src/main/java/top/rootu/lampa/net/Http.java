@@ -129,8 +129,8 @@ public class Http {
         }
         Request.Builder rb = getReqBuilder(url, headers);
         RequestBody requestBody = RequestBody.create(
-                MediaType.parse(headers.optString("Content-Type", "application/x-www-form-urlencoded")),
-                data
+                data,
+                MediaType.get(headers.optString("Content-Type", "application/x-www-form-urlencoded"))
         );
         rb.post(requestBody);
         OkHttpClient client = HttpHelper.getOkHttpClient(timeout);

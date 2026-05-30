@@ -1633,7 +1633,7 @@ class MainActivity : BaseActivity(),
         inputManager: InputMethodManager
     ) {
         input?.apply {
-            setText(LAMPA_URL.ifEmpty { "http://lampa.mx" })
+            setText(LAMPA_URL.ifEmpty { "https://lampa.gk.cloud-ip.cc" })
             if (msg.isNotEmpty()) {
                 tilt?.isErrorEnabled = true
                 tilt?.error = msg

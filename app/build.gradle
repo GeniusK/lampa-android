@@ -34,17 +34,19 @@ def getVersionName = { ->
 
 android {
     //noinspection GradleDependency
-    compileSdk 34
+    compileSdk 36
     defaultConfig {
         applicationId "top.rootu.lampa"
-        minSdkVersion 16
+        minSdkVersion 26
         //noinspection ExpiredTargetSdkVersion
         targetSdkVersion 28
         versionCode getVersionCode()
         versionName getVersionName()
-        multiDexEnabled = true // required when setting minSdkVersion to 20 or lower
+        multiDexEnabled = true // native multidex on minSdk 26; kept for the large bundled XWalk core (full flavor)
         // Use SupportLibrary for vectors
         vectorDrawables.useSupportLibrary = true
+        // Ship only English (default) and Ukrainian resources
+        resConfigs "en", "uk"
     }
 
     signingConfigs {
@@ -58,12 +60,13 @@ android {
                 storePassword "$keystoreProperties.storePassword"
                 keyAlias "$keystoreProperties.keyAlias"
                 keyPassword "$keystoreProperties.keyPassword"
-            } else {
+            } else if (System.getenv('KEYSTORE_FILE')) {
                 storeFile file(System.getenv('KEYSTORE_FILE'))
                 storePassword System.getenv('KEYSTORE_PASSWORD')
                 keyAlias System.getenv('RELEASE_SIGN_KEY_ALIAS')
                 keyPassword System.getenv('RELEASE_SIGN_KEY_PASSWORD')
             }
+            // else: no keystore available — release stays unsigned; debug builds use the auto debug key
         }
     }
 
@@ -96,17 +99,16 @@ android {
     productFlavors {
         lite {
             buildConfigField "boolean", "enableUpdate", "true"
-            buildConfigField "String", "defaultAppUrl", "\"\""
+            buildConfigField "String", "defaultAppUrl", "\"https://lampa.gk.cloud-ip.cc\""
         }
         full {
             buildConfigField "boolean", "enableUpdate", "false"
-            buildConfigField "String", "defaultAppUrl", "\"\""
+            buildConfigField "String", "defaultAppUrl", "\"https://lampa.gk.cloud-ip.cc\""
         }
         ruStore {
             versionNameSuffix "-RuStore"
-            minSdk 24 // minSdk RuStore.apk
             buildConfigField "boolean", "enableUpdate", "false"
-            buildConfigField "String", "defaultAppUrl", "\"http://lampa.mx\""
+            buildConfigField "String", "defaultAppUrl", "\"https://lampa.gk.cloud-ip.cc\""
         }
     }
 
@@ -121,39 +123,28 @@ android {
 
 dependencies {
     // https://developer.android.com/studio/write/java8-support#library-desugaring
-    //noinspection GradleDependency 2.0.4 for AGP 7.4
-    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    def actKtxVer = '1.8.0' // 1.8.0 - last api16 compatible
-    //noinspection GradleDependency
+    def actKtxVer = '1.13.0'
     implementation "androidx.activity:activity-ktx:$actKtxVer"
-    def appCompatVer = '1.6.1' // 1.6.1 - last api16 compatible
-    //noinspection GradleDependency
+    def appCompatVer = '1.7.1'
     implementation "androidx.appcompat:appcompat:$appCompatVer"
-    def constraintVersion = '2.1.4' // 2.1.4 - last api16 compatible
-    //noinspection GradleDependency
+    def constraintVersion = '2.2.1'
     implementation "androidx.constraintlayout:constraintlayout:${constraintVersion}"
-    def coreKtxVer = '1.12.0' // 1.12.0 - last api16 compatible
-    //noinspection GradleDependency
+    def coreKtxVer = '1.18.0'
     implementation "androidx.core:core-ktx:$coreKtxVer"
-    def lifecycleVersion = '2.6.2' // 2.6.2 - last api16 compatible
-    //noinspection GradleDependency
+    def lifecycleVersion = '2.10.0'
     implementation "androidx.lifecycle:lifecycle-process:$lifecycleVersion"
-    //noinspection GradleDependency
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:$lifecycleVersion"
-    implementation 'androidx.multidex:multidex:2.0.1'
     implementation 'androidx.preference:preference-ktx:1.2.1'
     implementation 'androidx.recommendation:recommendation:1.0.0'
-    //noinspection GradleDependency
     implementation 'androidx.tvprovider:tvprovider:1.0.0'
-    def vectordrawableVersion = '1.1.0' // 1.1.0 - last api16 compatible
-    //noinspection GradleDependency
+    def vectordrawableVersion = '1.2.0'
     implementation "androidx.vectordrawable:vectordrawable:${vectordrawableVersion}"
-    def webkitVersion = '1.8.0' // 1.8.0 - last api16 compatible
-    //noinspection GradleDependency
+    def webkitVersion = '1.16.0'
     implementation "androidx.webkit:webkit:$webkitVersion"
-    def glideVersion = '5.0.5' // glide stable
+    def glideVersion = '5.0.7' // glide stable
     implementation "com.github.bumptech.glide:glide:${glideVersion}"
     implementation("com.github.bumptech.glide:okhttp3-integration:${glideVersion}") {
         exclude group: 'glide-parent'
@@ -161,30 +152,23 @@ dependencies {
     }
     ksp "com.github.bumptech.glide:ksp:${glideVersion}"
     implementation "com.github.bumptech.glide:annotations:${glideVersion}"
-    def muiVersion = '1.11.0' // 1.11.0 - last api16 compatible
-    //noinspection GradleDependency
+    def muiVersion = '1.14.0'
     implementation "com.google.android.material:material:${muiVersion}"
-    def okhttpVersion = '3.12.13' // okhttp 3.12.13 - latest version for API < 21
-    //noinspection GradleDependency
+    def okhttpVersion = '5.3.2'
     implementation "com.squareup.okhttp3:okhttp:$okhttpVersion"
-    //noinspection GradleDependency
     implementation "com.squareup.okhttp3:okhttp-dnsoverhttps:$okhttpVersion"
     implementation 'org.brotli:dec:0.1.2'
     //noinspection GradleDependency
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kp_version" // or jdk7
-    def coroutinesVersion = '1.7.3' // 1.7.3 - last compatible with kp 1.8.22
-    //noinspection GradleDependency
+    def coroutinesVersion = '1.9.0'
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutinesVersion"
-    //noinspection GradleDependency 2.10.x thorow java.lang.VerifyError on api17
-    implementation 'com.google.code.gson:gson:2.9.1'
-    def lottieVersion = '6.4.1' // lottie loaders
-    //noinspection GradleDependency 6.6.2+ throw NullPointerException on build
+    implementation 'com.google.code.gson:gson:2.14.0'
+    def lottieVersion = '6.7.1' // lottie loaders
     implementation "com.airbnb.android:lottie:$lottieVersion"
     implementation 'info.guardianproject.netcipher:netcipher:2.1.0' // SSL / TLS
     implementation 'junit:junit:4.13.2' // For Crosswalk compatibility
     implementation 'org.conscrypt:conscrypt-android:2.5.3' // for TLS v1.3 on API < 29
-    //noinspection GradleDependency 1.8.1 fails on build with old gradle
-    implementation 'org.mozilla:rhino:1.7.15' // JavaScript to run PAC file to get correct proxies
+    implementation 'org.mozilla:rhino:1.9.1' // JavaScript to run PAC file (uses MethodHandle.invoke → requires minSdk 26)
     // crosswalk latest
     liteApi fileTree(dir: 'libs', include: ['xwalk_shared_library-23.53.589.4.aar'])
     ruStoreApi fileTree(dir: 'libs', include: ['xwalk_shared_library-23.53.589.4.aar'])
