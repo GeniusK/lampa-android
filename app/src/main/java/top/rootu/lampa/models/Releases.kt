@@ -21,6 +21,7 @@ data class Release(
     val tarball_url: String,
     val zipball_url: String,
     val body: String,
+    val version_code: Int = 0, // self-hosted update manifest only; absent in GitHub API → 0
 )
 
 data class Asset(

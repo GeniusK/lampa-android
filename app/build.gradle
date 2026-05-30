@@ -102,7 +102,7 @@ android {
             buildConfigField "String", "defaultAppUrl", "\"https://lampa.gk.cloud-ip.cc\""
         }
         full {
-            buildConfigField "boolean", "enableUpdate", "false"
+            buildConfigField "boolean", "enableUpdate", "true"
             buildConfigField "String", "defaultAppUrl", "\"https://lampa.gk.cloud-ip.cc\""
         }
         ruStore {

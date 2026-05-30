@@ -27,8 +27,10 @@ import javax.net.ssl.SSLSocketFactory
 
 
 object Updater {
-    private const val RELEASE_LINK =
-        "https://api.github.com/repos/lampa-app/LAMPA/releases"
+    // Self-hosted update manifest, per flavor (full/lite/ruStore).
+    // Manifest mimics the GitHub releases JSON and adds a numeric "version_code".
+    private val RELEASE_LINK =
+        "https://lampa.gk.cloud-ip.cc/media/downloads/update-${BuildConfig.FLAVOR}.json"
     private var releases: Releases? = null
     private var newVersion: Release? = null
 
@@ -55,33 +57,11 @@ object Updater {
                 it.bufferedReader(Charset.defaultCharset()).readText()
             } ?: return false
             releases = getJson(body, Releases::class.java)
-            releases?.let {
-                it.forEach { rel ->
-                    val majorVersionDouble: Double = try {
-                        rel.tag_name.replace("v", "").substringBefore(".").toDouble()
-                    } catch (npe: NumberFormatException) {
-                        0.0
-                    }
-                    val lastVersionDouble: Double = try {
-                        rel.tag_name.replace("v", "").substringAfter(".").toDouble()
-                    } catch (npe: NumberFormatException) {
-                        0.0
-                    }
-                    val majorCurrVersionDouble: Double = try {
-                        BuildConfig.VERSION_NAME.substringBefore(".").toDouble()
-                    } catch (npe: NumberFormatException) {
-                        0.0
-                    }
-                    val currVersionDouble: Double = try {
-                        BuildConfig.VERSION_NAME.substringAfter(".").toDouble()
-                    } catch (npe: NumberFormatException) {
-                        0.0
-                    }
-                    if (majorVersionDouble >= majorCurrVersionDouble && majorVersionDouble < 2 && lastVersionDouble > currVersionDouble) {
-                        newVersion = rel
-                        connection.disconnect()
-                        return true
-                    }
+            releases?.forEach { rel ->
+                if (rel.version_code > BuildConfig.VERSION_CODE) {
+                    newVersion = rel
+                    connection.disconnect()
+                    return true
                 }
             }
             connection.disconnect()
@@ -104,27 +84,7 @@ object Updater {
         var ret = ""
 
         releases?.forEach { rel ->
-            val majorVersionDouble: Double = try {
-                rel.tag_name.replace("v", "").substringBefore(".").toDouble()
-            } catch (npe: NumberFormatException) {
-                0.0
-            }
-            val lastVersionDouble: Double = try {
-                rel.tag_name.replace("v", "").substringAfter(".").toDouble()
-            } catch (npe: NumberFormatException) {
-                0.0
-            }
-            val majorCurrVersionDouble: Double = try {
-                BuildConfig.VERSION_NAME.substringBefore(".").toDouble()
-            } catch (npe: NumberFormatException) {
-                0.0
-            }
-            val currVersionDouble: Double = try {
-                BuildConfig.VERSION_NAME.substringAfter(".").toDouble()
-            } catch (npe: NumberFormatException) {
-                0.0
-            }
-            if (majorVersionDouble >= majorCurrVersionDouble && majorVersionDouble < 2 && lastVersionDouble > currVersionDouble) {
+            if (rel.version_code > BuildConfig.VERSION_CODE) {
                 ret += "<font color='white'><b>${rel.tag_name}</b></font> <br>"
                 ret += "<i>${rel.body.replace("\r\n", "<br/>")}</i><br/><br/>"
             } else {
