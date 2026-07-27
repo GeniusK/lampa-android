@@ -211,6 +211,16 @@ class AndroidJS(private val mainActivity: MainActivity, private val browser: Bro
         }
     }
 
+    /**
+     * Triggered from the Lampa UI ("Update app" button). Checks the self-hosted
+     * update manifest and, if a newer build exists, opens the update screen;
+     * otherwise shows an "up to date" toast.
+     */
+    @JavascriptInterface
+    fun updateApp() {
+        mainActivity.runOnUiThread { mainActivity.checkForUpdate() }
+    }
+
     @JavascriptInterface
     @Throws(JSONException::class)
     fun openTorrentLink(url: String, jsonString: String): Boolean {

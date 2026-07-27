@@ -31,6 +31,9 @@
     <string name="update_new_version">New version found</string>
     <string name="update_loading">Downloading the update…</string>
     <string name="update_signature_mismatch">Update rejected: the downloaded file is not signed by this app\'s key.</string>
+    <string name="update_app_title">Update app</string>
+    <string name="update_checking">Checking for updates…</string>
+    <string name="update_uptodate">You have the latest version</string>
     <string name="use_as_default">Remember choice</string>
     <string name="download_failed_message">Download failed</string>
     <!--Search-->

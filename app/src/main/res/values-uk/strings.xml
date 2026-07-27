@@ -29,6 +29,9 @@
     <string name="update_new_version">Знайдено нову версію</string>
     <string name="update_loading">Завантаження оновлення…</string>
     <string name="update_signature_mismatch">Оновлення відхилено: завантажений файл підписано не ключем цього застосунку.</string>
+    <string name="update_app_title">Оновлення застосунку</string>
+    <string name="update_checking">Перевірка оновлень…</string>
+    <string name="update_uptodate">У вас найновіша версія</string>
     <string name="use_as_default">Запам\'ятати вибір</string>
     <string name="download_failed_message">Помилка завантаження</string>
     <!--Search-->

@@ -46,6 +46,7 @@ import androidx.appcompat.widget.AppCompatImageButton
 import androidx.appcompat.widget.SwitchCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import top.rootu.lampa.helpers.Updater
 import com.airbnb.lottie.LottieAnimationView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.progressindicator.LinearProgressIndicator
@@ -1230,11 +1231,20 @@ class MainActivity : BaseActivity(),
                 icon = R.drawable.round_settings_backup_restore_24
             ),
             MenuItem(
+                title = getString(R.string.update_app_title),
+                action = "checkForUpdate",
+                icon = R.drawable.round_refresh_24
+            ),
+            MenuItem(
                 title = getString(R.string.exit),
                 action = "appExit",
                 icon = R.drawable.round_exit_to_app_24
             )
         )
+
+        // Drop the update item on builds that ship without the self-updater.
+        if (!BuildConfig.enableUpdate)
+            menuItems.removeAll { it.action == "checkForUpdate" }
 
         // Set up the adapter
         val adapter = ImgArrayAdapter(
@@ -1261,6 +1271,7 @@ class MainActivity : BaseActivity(),
                     }
 
                     "showBackupDialog" -> showBackupDialog()
+                    "checkForUpdate" -> checkForUpdate()
                     "appExit" -> appExit()
                 }
             }
@@ -1643,6 +1654,28 @@ class MainActivity : BaseActivity(),
             destroy()
         }
         finishAffinity() // exitProcess(1)
+    }
+
+    /**
+     * User-initiated update check (native menu item or the Lampa "Update app" button).
+     * Checks the self-hosted manifest off the main thread; opens [UpdateActivity] when a
+     * newer build exists, otherwise reports that the app is already up to date.
+     */
+    fun checkForUpdate() {
+        App.toast(R.string.update_checking)
+        lifecycleScope.launch(Dispatchers.IO) {
+            val hasUpdate = Updater.check()
+            withContext(Dispatchers.Main) {
+                if (hasUpdate) {
+                    startActivity(
+                        Intent(this@MainActivity, UpdateActivity::class.java)
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    )
+                } else {
+                    App.toast(R.string.update_uptodate)
+                }
+            }
+        }
     }
 
     fun setPlayerPackage(packageName: String, isIPTV: Boolean) {
