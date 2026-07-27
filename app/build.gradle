@@ -157,7 +157,6 @@ dependencies {
     def okhttpVersion = '5.3.2'
     implementation "com.squareup.okhttp3:okhttp:$okhttpVersion"
     implementation "com.squareup.okhttp3:okhttp-dnsoverhttps:$okhttpVersion"
-    implementation 'org.brotli:dec:0.1.2'
     //noinspection GradleDependency
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kp_version" // or jdk7
     def coroutinesVersion = '1.9.0'

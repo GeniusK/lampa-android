@@ -1,16 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
+    <!-- Cleartext is kept on purpose: a self-hosted media box legitimately talks to
+         local HTTP services (TorrServer, IPTV, DLNA). User-installed CAs are NOT
+         trusted (removed) to reduce the MITM surface; only system CAs are trusted. -->
     <base-config cleartextTrafficPermitted="true">
         <trust-anchors>
             <certificates src="system" />
-            <certificates src="user" />
         </trust-anchors>
     </base-config>
     <domain-config>
         <domain includeSubdomains="true">cub.watch</domain>
         <trust-anchors>
             <certificates src="system"/>
-            <certificates src="user" />
             <certificates src="@raw/cub_watch"/>
             <certificates src="@raw/cub_watch2"/>
             <certificates src="@raw/cub_watch3"/>
