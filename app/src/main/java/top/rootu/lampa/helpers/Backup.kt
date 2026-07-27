@@ -23,21 +23,15 @@ object Backup {
     private const val MAX_BACKUPS = 3 // Except current
     private const val TAG = "Backup"
 
-    val DIR: File by lazy { // Compatible directory selection for all APIs
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
-                .resolve("LAMPA").apply { mkdirs() }
-        } else {
-            File(Environment.getExternalStorageDirectory(), "LAMPA").apply { mkdirs() }
-        }
+    val DIR: File by lazy {
+        // App-specific external dir — no storage permission needed on any API and it
+        // works under scoped storage (targetSdk 30+). Survives app updates (wiped only
+        // on uninstall). Falls back to internal storage if external is unavailable.
+        (App.context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
+            ?: App.context.filesDir).resolve("LAMPA").apply { mkdirs() }
     }
 
     fun Context.backupSettings(which: String? = ""): Boolean {
-        if (!PermHelpers.hasStoragePermissions(this)) {
-            PermHelpers.verifyStoragePermissions(this)
-            return false
-        }
-
         if (!isOperationInProgress.compareAndSet(false, true)) {
             App.toast("Backup operation in progress")
             return false

@@ -1,5 +1,6 @@
 package top.rootu.lampa.helpers
 
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -182,30 +183,33 @@ object Updater {
                 return
             }
 
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-                val uri = Uri.fromFile(destination)
-                val install = Intent(Intent.ACTION_VIEW)
-                install.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                install.setDataAndType(uri, "application/vnd.android.package-archive")
-                if (install.resolveActivity(ctx.packageManager) != null)
-                    App.context.startActivity(install)
-                else
-                    App.toast(R.string.error_app_not_found)
-            } else {
-                val fileUri =
-                    FileProvider.getUriForFile(
-                        ctx,
-                        BuildConfig.APPLICATION_ID + ".update_provider",
-                        destination
+            // Launch the installer directly and catch absence, rather than gating on
+            // resolveActivity() — under package visibility (targetSdk 30+) the latter
+            // can return null even when startActivity() would succeed.
+            val install = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+                Intent(Intent.ACTION_VIEW).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    setDataAndType(
+                        Uri.fromFile(destination),
+                        "application/vnd.android.package-archive"
                     )
-                val install = Intent(Intent.ACTION_VIEW, fileUri)
-                install.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                install.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                if (install.resolveActivity(ctx.packageManager) != null)
-                    ctx.startActivity(install)
-                else
-                    App.toast(R.string.error_app_not_found)
+                }
+            } else {
+                val fileUri = FileProvider.getUriForFile(
+                    ctx,
+                    BuildConfig.APPLICATION_ID + ".update_provider",
+                    destination
+                )
+                Intent(Intent.ACTION_VIEW, fileUri).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+            }
+            try {
+                ctx.startActivity(install)
+            } catch (_: ActivityNotFoundException) {
+                App.toast(R.string.error_app_not_found)
             }
         }
     }

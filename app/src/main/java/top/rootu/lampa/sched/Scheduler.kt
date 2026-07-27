@@ -93,7 +93,10 @@ object Scheduler {
         @Suppress("DEPRECATION")
         // Create a PendingIntent for the alarm
         val pendingIntent = Intent(context, ContentAlarmManager::class.java).let { intent ->
-            PendingIntent.getService(context, CARDS_JOB_ID, intent, 0)
+            // FLAG_IMMUTABLE is mandatory on API 31+ (targetSdk 34), else this throws.
+            PendingIntent.getService(
+                context, CARDS_JOB_ID, intent, PendingIntent.FLAG_IMMUTABLE
+            )
         }
 
         // Cancel any existing alarms

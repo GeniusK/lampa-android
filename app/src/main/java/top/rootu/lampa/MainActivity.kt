@@ -1399,11 +1399,7 @@ class MainActivity : BaseActivity(),
         showFullScreenDialog(dialog)
         // Set active row
         adapter.setSelectedItem(0)
-
-        // Check storage permissions
-        if (!PermHelpers.hasStoragePermissions(this)) {
-            PermHelpers.verifyStoragePermissions(this)
-        }
+        // Backups now live in app-specific storage — no runtime permission needed.
     }
 
     fun showUrlInputDialog(msg: String = "") {

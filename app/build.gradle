@@ -40,8 +40,7 @@ android {
     defaultConfig {
         applicationId "top.rootu.lampa"
         minSdkVersion 26
-        //noinspection ExpiredTargetSdkVersion
-        targetSdkVersion 28
+        targetSdkVersion 34
         versionCode getVersionCode()
         versionName getVersionName()
         multiDexEnabled = true // native multidex on minSdk 26

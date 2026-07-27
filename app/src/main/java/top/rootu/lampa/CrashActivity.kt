@@ -39,9 +39,6 @@ class CrashActivity : BaseActivity() {
         }
         binding.btShowErrorLogs.setOnClickListener {
             showBottomSheetDialog(true, errorDetails)
-            if (!PermHelpers.hasStoragePermissions(this)) {
-                PermHelpers.verifyStoragePermissions(this)
-            }
         }
         binding.btRestartApp.requestFocus()
     }
