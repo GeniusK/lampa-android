@@ -216,14 +216,16 @@ class SysView(override val mainActivity: MainActivity, override val viewResId: I
                 }
             }
 
-            @SuppressLint("WebViewClientOnReceivedSslError")
             override fun onReceivedSslError(
                 view: WebView?,
                 handler: SslErrorHandler?,
                 error: SslError?
             ) {
-                debugLog("Ignore SSL error: $error")
-                handler?.proceed() // Ignore SSL certificate errors
+                // Reject invalid/untrusted certificates instead of silently proceeding.
+                // Proceeding here would let a MITM serve the SPA (and thus reach the
+                // AndroidJS bridge) over a forged certificate.
+                Log.w("SysView", "SSL error, aborting load: $error")
+                handler?.cancel()
             }
         }
 

@@ -44,7 +44,7 @@ android {
         targetSdkVersion 28
         versionCode getVersionCode()
         versionName getVersionName()
-        multiDexEnabled = true // native multidex on minSdk 26; kept for the large bundled XWalk core (full flavor)
+        multiDexEnabled = true // native multidex on minSdk 26
         // Use SupportLibrary for vectors
         vectorDrawables.useSupportLibrary = true
         // Ship only English (default) and Ukrainian resources
@@ -99,17 +99,11 @@ android {
     flavorDimensions "default"
 
     productFlavors {
+        // Single flavor kept so BuildConfig.FLAVOR stays "lite" — the self-update
+        // manifest (update-lite.json) and CI artifact name (app-lite-release.apk)
+        // depend on it. The system WebView is now the only engine (XWalk removed).
         lite {
             buildConfigField "boolean", "enableUpdate", "true"
-            buildConfigField "String", "defaultAppUrl", "\"https://lampa.gk.cloud-ip.cc\""
-        }
-        full {
-            buildConfigField "boolean", "enableUpdate", "true"
-            buildConfigField "String", "defaultAppUrl", "\"https://lampa.gk.cloud-ip.cc\""
-        }
-        ruStore {
-            versionNameSuffix "-RuStore"
-            buildConfigField "boolean", "enableUpdate", "false"
             buildConfigField "String", "defaultAppUrl", "\"https://lampa.gk.cloud-ip.cc\""
         }
     }
@@ -119,6 +113,10 @@ android {
     }
     buildFeatures {
         viewBinding true
+    }
+    testOptions {
+        // Stub android.* calls return defaults instead of throwing in JVM unit tests.
+        unitTests.returnDefaultValues = true
     }
     namespace 'top.rootu.lampa'
 }
@@ -168,11 +166,8 @@ dependencies {
     def lottieVersion = '6.7.1' // lottie loaders
     implementation "com.airbnb.android:lottie:$lottieVersion"
     implementation 'info.guardianproject.netcipher:netcipher:2.1.0' // SSL / TLS
-    implementation 'junit:junit:4.13.2' // For Crosswalk compatibility
     implementation 'org.conscrypt:conscrypt-android:2.5.3' // for TLS v1.3 on API < 29
     implementation 'org.mozilla:rhino:1.9.1' // JavaScript to run PAC file (uses MethodHandle.invoke → requires minSdk 26)
-    // crosswalk latest
-    liteApi fileTree(dir: 'libs', include: ['xwalk_shared_library-23.53.589.4.aar'])
-    ruStoreApi fileTree(dir: 'libs', include: ['xwalk_shared_library-23.53.589.4.aar'])
-    fullApi fileTree(dir: 'libs', include: ['xwalk_core_library-23.53.589.4.aar'])
+
+    testImplementation 'junit:junit:4.13.2'
 }

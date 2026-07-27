@@ -11,7 +11,7 @@ interface Browser {
     var isDestroyed: Boolean
 
     /**
-     * Interface used to update the Crosswalk runtime
+     * Interface used to notify the host activity about browser lifecycle events.
      */
     interface Listener {
         fun onBrowserInitCompleted()
@@ -62,7 +62,6 @@ interface Browser {
      * <pre class="prettyprint">
      * class JsObject {
      * @JavascriptInterface
-     * @org.xwalk.core.JavascriptInterface
      * public String toString() { return "injectedObject"; }
      * }
      * webview.getSettings().setJavaScriptEnabled(true);

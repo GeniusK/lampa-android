@@ -77,15 +77,16 @@ public class HttpHelper {
             builder.protocols(Collections.singletonList(Protocol.HTTP_1_1));
         }
         try {
-            // use Conscrypt for TLS on Android < 10 and trust all certs
+            // Use Conscrypt for TLS 1.3 on Android < 10. Certificates are validated
+            // against the system CA store (system trust manager); the default OkHttp
+            // hostname verifier is kept — no trust-all, no MITM bypass.
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q
                     && (!Helpers.isBrokenTCL() && !Helpers.isWisdomShare())
             ) {
                 builder.sslSocketFactory(
                         new TlsSocketFactory(TlsSocketFactory.TLS_MODERN),
-                        TlsSocketFactory.trustAllCerts
+                        TlsSocketFactory.getSystemTrustManager()
                 );
-                builder.hostnameVerifier((hostname, session) -> true);
             }
             // https://github.com/square/okhttp/issues/3894
             // The default OkHttp configuration does not support older versions of TLS,

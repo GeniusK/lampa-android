@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.security.KeyManagementException;
+import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.Security;
@@ -14,6 +15,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
 public class TlsSocketFactory extends SSLSocketFactory {
@@ -22,7 +24,36 @@ public class TlsSocketFactory extends SSLSocketFactory {
     public static final String[] TLS_RESTRICTED = {"TLSv1.2", "TLSv1.3"};
     private final String[] enabledProtocols;
     private final SSLSocketFactory delegate;
-    public static final X509TrustManager trustAllCerts = new IgnoreSSLTrustManager();
+    // The platform's default trust manager — validates the server chain against the
+    // system CA store. Replaces the previous trust-all manager (insecure, allowed MITM).
+    private static X509TrustManager systemTrustManager;
+
+    /**
+     * Returns the platform default X509 trust manager (system CA store), cached.
+     * Callers that build an OkHttp client must pass this same instance to
+     * {@code sslSocketFactory(factory, trustManager)} so validation stays consistent.
+     */
+    public static synchronized X509TrustManager getSystemTrustManager() {
+        if (systemTrustManager == null) {
+            try {
+                TrustManagerFactory tmf = TrustManagerFactory.getInstance(
+                        TrustManagerFactory.getDefaultAlgorithm());
+                tmf.init((KeyStore) null); // null → default system CA store
+                for (TrustManager tm : tmf.getTrustManagers()) {
+                    if (tm instanceof X509TrustManager) {
+                        systemTrustManager = (X509TrustManager) tm;
+                        break;
+                    }
+                }
+            } catch (Exception e) {
+                throw new RuntimeException("Unable to init system trust manager", e);
+            }
+            if (systemTrustManager == null) {
+                throw new IllegalStateException("No system X509TrustManager available");
+            }
+        }
+        return systemTrustManager;
+    }
 
     public TlsSocketFactory(String[] enabledProtocols) throws KeyManagementException, NoSuchAlgorithmException {
         this.enabledProtocols = enabledProtocols;
@@ -46,7 +77,7 @@ public class TlsSocketFactory extends SSLSocketFactory {
             Security.insertProviderAt(conscrypt, 1);
         }
         SSLContext context = SSLContext.getInstance("TLS", TlsSocketFactory.conscrypt);
-        context.init(null, new TrustManager[]{trustAllCerts}, null);
+        context.init(null, new TrustManager[]{getSystemTrustManager()}, null);
         return context.getSocketFactory();
     }
 

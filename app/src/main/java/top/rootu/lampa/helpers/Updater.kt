@@ -1,9 +1,12 @@
 package top.rootu.lampa.helpers
 
+import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.text.Spanned
+import android.util.Log
 import androidx.core.content.FileProvider
 import androidx.core.text.HtmlCompat
 import kotlinx.coroutines.CoroutineScope
@@ -27,7 +30,9 @@ import javax.net.ssl.SSLSocketFactory
 
 
 object Updater {
-    // Self-hosted update manifest, per flavor (full/lite/ruStore).
+    private const val TAG = "Updater"
+
+    // Self-hosted update manifest for the (sole) "lite" flavor.
     // Manifest mimics the GitHub releases JSON and adds a numeric "version_code".
     private val RELEASE_LINK =
         "https://lampa.gk.cloud-ip.cc/media/downloads/update-${BuildConfig.FLAVOR}.json"
@@ -37,7 +42,8 @@ object Updater {
     init {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
             try {
-                // Only TLSv1.2 and TLSv1.3 protocol available and trust all certs (insecure).
+                // Enable TLSv1.2/1.3 via Conscrypt on Android < 10. Certificates are
+                // validated against the system CA store (no trust-all).
                 val socketFactory: SSLSocketFactory = TlsSocketFactory()
                 HttpsURLConnection.setDefaultSSLSocketFactory(socketFactory)
             } catch (_: GeneralSecurityException) {
@@ -102,10 +108,9 @@ object Updater {
             newVersion?.let { rel ->
                 if (file.exists())
                     file.delete()
-                var link = ""
-                for (asset in rel.assets) {
-                    link = asset.browser_download_url
-                }
+                // Pick the APK asset for this flavor; fall back to the first .apk.
+                // (Previously the loop kept only the LAST asset regardless of type.)
+                val link = UpdateUtils.pickApkUrl(rel.assets, BuildConfig.FLAVOR) ?: ""
                 if (link.isNotEmpty()) {
                     try {
                         val url = URL(link)
@@ -153,15 +158,29 @@ object Updater {
             return
 
         newVersion?.let {
-            val destination = File(
-                ctx.getExternalFilesDir(null),
-                "LAMPA.apk"
-            ).apply {
-                mkdirs()
-                deleteOnExit()
-            }
+            // NB: mkdirs() must run on the parent dir, not on the .apk file itself
+            // (the old code created a *directory* named LAMPA.apk).
+            val destination = File(ctx.getExternalFilesDir(null), "LAMPA.apk")
+            destination.parentFile?.mkdirs()
+            if (destination.exists()) destination.delete()
 
             downloadApk(destination, onProgress)
+
+            if (!destination.exists() || destination.length() == 0L) {
+                Log.e(TAG, "APK download failed or empty")
+                App.toast(R.string.download_failed_message)
+                return
+            }
+
+            // Refuse to install an APK that is not signed by this app's own key.
+            // Defeats a MITM-swapped update: the attacker cannot forge our signature,
+            // and Android would reject a differently-signed update anyway.
+            if (!isApkSignedBySameCert(ctx, destination)) {
+                Log.e(TAG, "Downloaded APK signature mismatch — aborting install")
+                destination.delete()
+                App.toast(R.string.update_signature_mismatch)
+                return
+            }
 
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
                 val uri = Uri.fromFile(destination)
@@ -190,4 +209,32 @@ object Updater {
             }
         }
     }
+
+    /**
+     * True when [apk]'s signing certificate set exactly matches the currently
+     * installed app's. Uses GET_SIGNATURES (available on all supported API levels).
+     */
+    @Suppress("DEPRECATION", "PackageManagerGetSignatures")
+    private fun isApkSignedBySameCert(ctx: Context, apk: File): Boolean {
+        return try {
+            val pm = ctx.packageManager
+            val archive = pm.getPackageArchiveInfo(
+                apk.absolutePath, PackageManager.GET_SIGNATURES
+            ) ?: return false
+            val installed = pm.getPackageInfo(
+                ctx.packageName, PackageManager.GET_SIGNATURES
+            )
+            val archiveSigs = archive.signatures?.mapNotNull { it?.toByteArray()?.toHex() }
+                ?.toSet().orEmpty()
+            val installedSigs = installed.signatures?.mapNotNull { it?.toByteArray()?.toHex() }
+                ?.toSet().orEmpty()
+            archiveSigs.isNotEmpty() && archiveSigs == installedSigs
+        } catch (e: Exception) {
+            Log.e(TAG, "Signature verification failed", e)
+            false
+        }
+    }
+
+    private fun ByteArray.toHex(): String =
+        joinToString("") { "%02x".format(it) }
 }

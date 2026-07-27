@@ -82,10 +82,20 @@ object Prefs {
         get() = appPrefs.getString(APP_BROWSER, MainActivity.SELECTED_BROWSER)
         set(browser) = appPrefs.edit().putString(APP_BROWSER, browser).apply()
 
+    // The app ships strings only for English and Ukrainian (see resConfigs "en","uk").
+    // Anything else (e.g. a device locale or a language pushed from the SPA) is
+    // normalized to one of these so TMDB metadata and voice search stay in-sync.
+    private val SUPPORTED_LANGS = setOf("en", "uk")
+
+    fun normalizeLang(code: String?): String {
+        val base = code?.trim()?.lowercase()
+            ?.substringBefore('-')?.substringBefore('_') ?: ""
+        return if (base in SUPPORTED_LANGS) base else "en"
+    }
+
     var Context.appLang: String
-        get() = appPrefs.getString(APP_LANG, Locale.getDefault().language)
-            ?: Locale.getDefault().language
-        set(lang) = appPrefs.edit().putString(APP_LANG, lang).apply()
+        get() = normalizeLang(appPrefs.getString(APP_LANG, Locale.getDefault().language))
+        set(lang) = appPrefs.edit().putString(APP_LANG, normalizeLang(lang)).apply()
 
     var Context.tmdbApiUrl: String
         get() = appPrefs.getString(TMDB_API_KEY, TMDB.APIURL) ?: TMDB.APIURL
