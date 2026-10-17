@@ -38,9 +38,7 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
     - name: Build with Gradle
-      run: |
-         ./gradlew assembleRelease  --stacktrace
-         ./gradlew bundleRelease
+      run: ./gradlew assembleRelease --stacktrace
     - name: Release
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')
